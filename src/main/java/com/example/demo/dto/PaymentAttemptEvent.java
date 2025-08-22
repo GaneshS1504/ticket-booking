@@ -9,8 +9,8 @@ import lombok.*;
 @AllArgsConstructor
 public class PaymentAttemptEvent {
 
-	private Long seatId;
-	private Long userId;
+	private int userId;
+	private int seatId;
 	private int attempt; // 1..N
 	private LocalDateTime holdUntil;
 	private String eventId;

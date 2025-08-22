@@ -43,7 +43,7 @@ public class KafkaProducerConfiguration {
 
 	@Bean
 	public NewTopic transactionTopic() {
-		return TopicBuilder.name("booking-transaction")
+		return TopicBuilder.name("payment-topic")
 				.partitions(3)
 				.replicas(1)
 				.config("cleanup.policy", "compact,delete")

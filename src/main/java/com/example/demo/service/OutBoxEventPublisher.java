@@ -38,7 +38,7 @@ public class OutBoxEventPublisher {
 
 			String key = String.valueOf(event.getId());
 
-			ProducerRecord<String, OutBoxEvent> producerRecord = new ProducerRecord<String, OutBoxEvent>("booking-transaction",key, event);
+			ProducerRecord<String, OutBoxEvent> producerRecord = new ProducerRecord<String, OutBoxEvent>("payment-topic",key, event);
 
 			CompletableFuture<org.springframework.kafka.support.SendResult<String, OutBoxEvent>> response = kafkaTemplate
 					.send(producerRecord);
@@ -79,5 +79,4 @@ public class OutBoxEventPublisher {
 			outBoxRepository.save(e);
 		});
 	}
-
 }

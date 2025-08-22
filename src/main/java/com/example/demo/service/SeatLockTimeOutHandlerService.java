@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.entity.Status;
+import com.example.demo.repository.OutBoxRepository;
 import com.example.demo.repository.SeatRepository;
 
 import lombok.AllArgsConstructor;
@@ -17,8 +18,9 @@ import lombok.AllArgsConstructor;
 public class SeatLockTimeOutHandlerService {
 
 	private final SeatRepository seatRepository;
+	private final OutBoxRepository outBoxRepository;
 
-	@Scheduled(fixedDelay = 13000, initialDelay = 1000, timeUnit = TimeUnit.MILLISECONDS)
+	@Scheduled(fixedDelay = 60000, initialDelay = 10000, timeUnit = TimeUnit.MILLISECONDS)
 	@Transactional
 	public void checkExpiredLock() {
 
@@ -31,6 +33,10 @@ public class SeatLockTimeOutHandlerService {
 				seatRepository.save(seat);
 			});
 		}, () -> System.out.println("No locked seats found to process."));
+		
+		if(outBoxRepository.existsByType("SeatHeld")) {
+			outBoxRepository.deleteAllByType("SeatHeld");
+		}
 
 	}
 }

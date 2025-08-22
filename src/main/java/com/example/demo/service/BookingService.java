@@ -1,35 +1,35 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.EventService;
+import com.example.demo.dto.PaymentAttemptEvent;
 import com.example.demo.dto.SeatHeldEvent;
-import com.example.demo.entity.OutBoxEvent;
 import com.example.demo.entity.Seat;
 import com.example.demo.entity.Status;
-import com.example.demo.repository.OutBoxRepository;
 import com.example.demo.repository.SeatRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class BookingService {
 
 	private final SeatRepository seatRepo;
-	private final OutBoxRepository outboxRepo;
-	private final ObjectMapper om;
+	private final EventService eventService;
 	
 	@Value("${booking.payment.holdMinutes}")
 	private int holdMinutes;
-	
-	public BookingService(SeatRepository seatRepo, OutBoxRepository outboxRepo, ObjectMapper om) {
+
+	private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
+
+	public BookingService(SeatRepository seatRepo, EventService eventService) {
 		super();
 		this.seatRepo = seatRepo;
-		this.outboxRepo = outboxRepo;
-		this.om = om;
+		this.eventService = eventService;
 	}
 
 	@org.springframework.transaction.annotation.Transactional
@@ -43,8 +43,14 @@ public class BookingService {
 		}
 
 		if (seat.getStatus() == Status.held && seat.getHoldByUntill() != null
-				&& seat.getHoldByUntill().isAfter(LocalDateTime.now())) {
-			throw new IllegalStateException("Seat already on hold");
+				&& seat.getHoldByUntill().isAfter(LocalDateTime.now()) && seat.getUserId() == userId) {
+
+			logger.info("Seat is on Hold make payment");
+			eventService.createOutBoxEvent("AttemtPayment",
+					new PaymentAttemptEvent(seat.getUserId(), seat.getSeatNumber(),1, seat.getHoldByUntill(), null));
+
+		}else {
+			throw new RuntimeException("Seat is on Hold");
 		}
 
 		seat.setStatus(Status.held);
@@ -52,18 +58,9 @@ public class BookingService {
 		seat.setHoldByUntill(LocalDateTime.now().plusMinutes(holdMinutes));
 		seatRepo.save(seat);
 
-		createOutBoxEvent("SeatHeld",
+		eventService.createOutBoxEvent("SeatHeld",
 				new SeatHeldEvent(seat.getUserId(), seat.getSeatNumber(), seat.getHoldByUntill(), null));
+
 	}
-	
-	private void createOutBoxEvent(String type, SeatHeldEvent seatHeldEvent) throws JsonProcessingException {
-		
-		OutBoxEvent e = new OutBoxEvent();
-		e.setId(UUID.randomUUID());
-		e.setPayload(om.writeValueAsString(seatHeldEvent));
-		e.setType(type);
-		
-		outboxRepo.save(e);
-	}
-	
+
 }

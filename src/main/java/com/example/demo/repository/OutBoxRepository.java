@@ -14,9 +14,13 @@ import com.example.demo.entity.OutBoxEvent;
 
 @Repository
 public interface OutBoxRepository extends JpaRepository<OutBoxEvent, UUID> {
-	
+
 	@Query("Select o from OutBoxEvent o where "
 			+ "o.status = 'NEW' and o.runAt <= :now "
 			+ "order by o.createdAt")
 	List<OutBoxEvent> findDueEvents(@Param("now") LocalDateTime now, Pageable pageable);
+	
+	boolean existsByType(String type);
+	
+	void deleteAllByType(String type);
 }
